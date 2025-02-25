@@ -7,6 +7,5 @@ namespace NetCoreBasics.Services
         private readonly string _id;
         public SingletonService() => _id = Guid.NewGuid().ToString();
         public string GetId() => _id;
-
     }
 }

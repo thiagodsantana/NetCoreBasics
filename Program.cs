@@ -1,14 +1,16 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using NetCoreBasics;
 using NetCoreBasics.Class;
+using NetCoreBasics.Configurations;
 using NetCoreBasics.Interfaces;
 using NetCoreBasics.Services;
-using NetCoreBasics.Configurations;
 using System.Text;
-using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
+#region Configurations
 /*
  * Configurations
     - Adicionando configurações ao container DI
@@ -19,8 +21,9 @@ builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSet
 
 // 🔹 Obtendo valores diretamente da configuração para autenticação JWT
 var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>();
+#endregion
 
-
+#region Configuração de Autenticação JWT
 // 🔹 Configuração de Autenticação JWT
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -37,10 +40,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+#endregion
+
+#region Configuração do Swagger
 // 🔹 Configuração do Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+#endregion
 
+#region Injeção de dependência
 /* Injeção de dependência
     - Singleton: Criado uma vez e usado globalmente.
     - Scoped: Criado por requisição e compartilhado dentro dela.
@@ -49,6 +57,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<ISingletonService, SingletonService>();
 builder.Services.AddScoped<IScopedService, ScopedService>();
 builder.Services.AddTransient<ITransientService, TransientService>();
+#endregion
 
 var app = builder.Build();
 
@@ -58,9 +67,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+#region Middleware
 app.UseAuthentication();
 
-// 🔹 Endpoints de configuração
+app.UseMiddleware<CustomMiddleware>();
+#endregion
+
+#region Endpoints de configuração 
 app.MapGet("/config", (IOptions<AppSettings> options) =>
 {
     var config = options.Value;
@@ -82,15 +96,19 @@ app.MapGet("/config-live", (IOptionsMonitor<AppSettings> optionsMonitor) =>
         FuncionalidadeX = config.EnableFeatureX ? "Ativada" : "Desativada"
     };
 });
+#endregion
 
+#region .NET 6
 /* .NET 6 
     - Minimal API básica com MapGet para criar endpoints.
     - Código reduzido e mais performático.
     - Usa um serviço Singleton para mostrar o mesmo ID sempre.
  */
-app.MapGet("/Singleton", (ISingletonService singleton) =>
+app.MapPost("/Singleton", (ISingletonService singleton) =>
     $"Hello, World! Singleton ID: {singleton.GetId()}");
+#endregion
 
+#region .NET 7
 /* .NET 7
     - Introdução de Endpoint Filters (AddEndpointFilter).
     - Permite validar a entrada antes da execução do endpoint. 
@@ -115,6 +133,9 @@ app.MapPost("/Transient", (User user, ITransientService transient) =>
            return Results.BadRequest("Nome é obrigatório.");
        return await next(context);
    });
+#endregion
+
+#region .NET 8
 
 /* .NET 8
     - Uso de Route Groups para melhor organização.
@@ -136,5 +157,6 @@ userRoutes.MapPost("/", (User user, IScopedService scoped, ITransientService tra
         ScopedID = scoped.GetId(),
         TransientID = transient.GetId()
     }));
+#endregion
 
 app.Run();
