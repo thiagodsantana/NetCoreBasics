@@ -5,7 +5,7 @@ namespace NetCoreBasics
 {
     public static class Extension
     {
-        #region Logger
+        #region Configurando Logger
         public static void ConfigureLogger(IServiceCollection services)
         {
             var serviceProvider = services.BuildServiceProvider();
