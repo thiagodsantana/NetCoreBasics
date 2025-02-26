@@ -5,7 +5,6 @@ using NetCoreBasics;
 using NetCoreBasics.Class;
 using NetCoreBasics.Configurations;
 using NetCoreBasics.Interfaces;
-using NetCoreBasics.Services;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -48,16 +47,9 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 #endregion
 
-#region Injeção de dependência
-/* Injeção de dependência
-    - Singleton: Criado uma vez e usado globalmente.
-    - Scoped: Criado por requisição e compartilhado dentro dela.
-    - Transient: Criado toda vez que for solicitado.
- */
-builder.Services.AddSingleton<ISingletonService, SingletonService>();
-builder.Services.AddScoped<IScopedService, ScopedService>();
-builder.Services.AddTransient<ITransientService, TransientService>();
-#endregion
+
+Extension.ConfigureServices(builder.Services);
+Extension.ConfigureLogger(builder.Services);
 
 var app = builder.Build();
 
@@ -145,7 +137,7 @@ app.MapPost("/Transient", (User user, ITransientService transient) =>
     - POST /users → Demonstra o uso de Scoped e Transient juntos.
  */
 var userRoutes = app.MapGroup("/users")
-                    .RequireAuthorization(); // Exige autenticação
+                    .RequireAuthorization(); // Exige autenticação - Verificar pois existe desde a primeira versão Minimal API
 
 userRoutes.MapGet("/{id:int}", (int id, ITransientService transient) =>
     TypedResults.Ok(new { Id = id, Name = $"User {id}", TransientID = transient.GetId() }));
